@@ -19,6 +19,23 @@ TOOLS = [
                 "required": ["location", "date"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_web",
+            "description": "Search the web for general information",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The search query"
+                    }
+                },
+                "required": ["query"]
+            }
+        }
     }
 ]
 
@@ -41,3 +58,23 @@ def search_weather(location: str, date: str) -> str:
         return weather_data[key]
     else:
         return f"Weather data for {location} on {date} not available in mock database"
+    
+def search_web(query: str) -> str:
+    """
+    Mock web search tool.
+    """
+
+    # Mock search results
+    search_results = {
+        "best running tips": "Stay hydrated, warm up before running, wear proper shoes, and run on flat surfaces to avoid injury.",
+        "running benefits": "Running improves cardiovascular health, burns calories, builds muscle, and reduces stress.",
+        "delhi weather": "Delhi has a subtropical climate with hot summers and cool winters.",
+        "health benefits": "Running improves cardiovascular health, burns calories, builds muscle, and reduces stress.",
+        "benefits of running": "Running improves cardiovascular health, burns calories, builds muscle, and reduces stress.",
+    }
+
+    for key, result in search_results.items():
+        if key.lower() in query.lower():
+            return result
+        
+    return f"No results found for: {query}"
