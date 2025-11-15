@@ -80,4 +80,103 @@ def run_agent(user_question: str):
         print(f"No tools needed.")
         print(f"Answer: {assistant_message.content}")
 
-run_agent("Can I run in Delhi? What are the health benefits of running?")
+def run_agent_with_history(user_question: str, conversation_history: list):
+    """
+    Run agent with full conversation history (session history for now).
+    """
+
+    print("Agent thinking")
+
+    response = client.chat.completions.create(
+        model=MODEL,
+        max_tokens=MAX_TOKENS_PER_REQUEST,
+        tools=TOOLS,
+        tool_choice="auto",
+        messages=conversation_history
+    )
+
+    log_usage(response)
+
+    assistant_message = response.choices[0].message
+
+    if assistant_message.tool_calls:
+        conversation_history.append(
+            {
+                "role": "assistant",
+                "content": assistant_message.content,
+                "tool_calls": assistant_message.tool_calls
+            }
+        )
+    
+        for tool_call in assistant_message.tool_calls:
+            tool_name = tool_call.function.name
+            tool_args = json.loads(tool_call.function.arguments)
+
+            print(f"Calling tool: {tool_name}")
+            print(f"Parameters: {tool_args}")
+
+            if tool_name == "search_weather":
+                result = search_weather(**tool_args)
+                print(f"Result: {result}")
+            elif tool_name == "search_web":
+                result = search_web(**tool_args)
+                print(f"Result: {result}")
+            
+            conversation_history.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": result
+                }
+            )
+        
+        final_response = client.chat.completions.create(
+            model=MODEL,
+            max_tokens=MAX_TOKENS_PER_REQUEST,
+            tools=TOOLS,
+            messages=conversation_history
+        )
+
+        log_usage(final_response)
+
+        final_answer = final_response.choices[0].message.content
+
+        conversation_history.append(
+            {
+                "role": "assistant",
+                "content": final_answer
+            }
+        )
+
+        print(f"Agent: {final_answer}\n")
+    else:
+        final_answer = assistant_message.content
+        conversation_history.append({"role": "assistant", "content": final_answer})
+        print(f"Agent: {final_answer}\n")
+
+def main():
+    print(f"Weather and Info agent started")
+    print(f"Ask me anything (type 'quit' to exit)\n")
+
+    conversation_history = []
+
+    while True:
+        user_input = input("You: ").strip()
+
+        if user_input.lower() == 'quit':
+            print("Exiting.")
+            break
+        if not user_input:
+            continue
+            
+        conversation_history.append(
+            {
+                "role": "user",
+                "content": user_input
+            }
+        )
+
+        run_agent_with_history(user_input, conversation_history)
+
+if __name__ == "__main__":
+    main()
