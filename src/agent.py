@@ -1,6 +1,6 @@
 from openai import OpenAI
 from config import API_KEY, MODEL, MAX_TOKENS_PER_REQUEST, SYSTEM_PROMPT
-from tools import TOOLS, search_weather, search_web
+from src.tools import TOOLS, search_weather, search_web
 from usage_tracker import log_usage
 import json
 
