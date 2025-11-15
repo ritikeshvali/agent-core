@@ -1,5 +1,5 @@
 from openai import OpenAI
-from config import API_KEY, MODEL, MAX_TOKENS_PER_REQUEST
+from config import API_KEY, MODEL, MAX_TOKENS_PER_REQUEST, SYSTEM_PROMPT
 from tools import TOOLS, search_weather, search_web
 from usage_tracker import log_usage
 import json
@@ -92,7 +92,10 @@ def run_agent_with_history(user_question: str, conversation_history: list):
         max_tokens=MAX_TOKENS_PER_REQUEST,
         tools=TOOLS,
         tool_choice="auto",
-        messages=conversation_history
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            *conversation_history
+        ]
     )
 
     log_usage(response)
@@ -115,12 +118,20 @@ def run_agent_with_history(user_question: str, conversation_history: list):
             print(f"Calling tool: {tool_name}")
             print(f"Parameters: {tool_args}")
 
+        try:
             if tool_name == "search_weather":
                 result = search_weather(**tool_args)
                 print(f"Result: {result}")
             elif tool_name == "search_web":
                 result = search_web(**tool_args)
                 print(f"Result: {result}")
+            else:
+                result = f"Unknown tool: {tool_name}"
+                print(f"   Error: {result}")
+        
+        except Exception as e:
+            result = f"Tool error: {str(e)}"
+            print(f"   Error: {result}")
             
             conversation_history.append(
                 {
@@ -134,7 +145,10 @@ def run_agent_with_history(user_question: str, conversation_history: list):
             model=MODEL,
             max_tokens=MAX_TOKENS_PER_REQUEST,
             tools=TOOLS,
-            messages=conversation_history
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                *conversation_history
+            ]
         )
 
         log_usage(final_response)
